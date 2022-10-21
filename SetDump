@@ -1,0 +1,416 @@
+# SetDumpTarget Settings
+# Adjust value to use spells or not
+if not listexists SetDumpTarget_Settings
+    createlist SetDumpTarget_Settings
+
+    # Change to 1 or 0
+    # 1 = Use this spell
+    # 0 = Do not use this spell
+
+    setvar! useManaDrain 1
+    setvar! useCurse 1
+
+    setvar! useLightning 1
+    setvar! useFireball 0
+    setvar! useHarm 1
+    setvar! useMagicArrow 1
+
+    setvar! useEvilOmen 1
+    setvar! useCorpseSkin 1
+    setvar! useMindRot 0
+    setvar! useStrangle 0
+endif
+
+# DumpOpener
+# Timers
+if not timerexists antiSpam
+    settimer antiSpam 651
+endif
+if not timerexists necroability
+    settimer necroability 651
+endif
+if not timerexists msgSpell
+    settimer msgSpell 3001
+endif
+if timerexists mushroom
+    if timer mushroom > 59999 or insysmsg 'may now use another magic mushroom'
+        sysmsg '[I]: Mushroom Ready' 88
+        removetimer mushroom
+    endif
+endif
+
+# Checking Buffs
+if not targetexists 
+    # Mushroom
+    if not timerexists mushroom
+        if diffmana > 40 and timer antiSpam > 650
+            if findtype mushroom backpack as found
+                sysmsg '[I]: Mushroom Used!' 98
+                dclick found
+                settimer mushroom 0
+                settimer antiSpam 0
+            endif
+        endif
+    endif
+    
+    # Poison
+    if poisoned
+        potion cure
+    endif
+ 
+    # Hits
+    if diffhits > 35
+        potion heal
+        settimer antiSpam 0                
+    endif
+    target clear
+    
+    # Bless and Protection if Scribe
+    if skill inscription > 0
+        sysmsg 'Character is Scribe'
+        if not findbuff 'Cunning'
+            while not targetexists
+                if timer msgSpell > 3000
+                    sysmsg '[S]: Bless!' 945
+                    settimer msgSpell 0
+                endif
+                cast 'Bless'
+                wait 50
+            endwhile
+            wft 200
+            hotkey 'target self'
+            wait 300
+            loop
+        endif
+        if not findbuff 'protection'
+            while not targetexists
+                if timer msgSpell > 3000
+                    sysmsg '[S]: Arch Protection!' 945
+                    settimer msgSpell 0
+                endif
+                cast 'Arch Protection'
+                wait 50
+            endwhile
+            wft 200
+            hotkey 'target self'
+            wait 300
+            loop
+        endif
+    endif
+    
+    # Spell Reflection
+    if not findbuff 'reflect' 
+        if timer msgSpell > 3000
+            sysmsg '[S]: Magic Reflection!' 945
+            settimer msgSpell 0
+        endif  
+        cast 'Magic Reflection'
+        wait 200
+        if insysmsg 'will not adhere'
+            clearsysmsg 
+        else
+            wait 2500
+        endif
+    endif 
+  
+    # Reactive Armor
+    if not findbuff 'reactive armor'
+        if timer msgSpell > 3000
+            sysmsg '[S]: Reactive Armor!' 945
+            settimer msgSpell 0
+        endif
+        cast 'Reactive Armor'
+        wait 200
+        if insysmsg 'will not adhere'
+            wait 300
+        else
+            wait 1000
+        endif
+    endif   
+
+    # Herbal Poultice
+    if not findbuff 'Herbal Poultice' 
+        if skill 'taste' > 49.9
+            @setvar! targetCurrent lasttarget
+            hotkey 'cancel current target' 
+            skill 'tasteidentification'
+            wft 200
+            targettype dagger backpack
+            wait 200
+            hotkey 'set last target'
+            target targetCurrent
+        endif
+    endif
+
+    # Food
+    if not findbuff 'food satisfaction' 
+        if findtype tray backpack as x
+            dclick x
+        endif
+    endif
+
+endif
+
+# Necromancy Hotbar
+if skill necromancy > 0
+    if not gumpexists 622436516
+        yell [necromancyhotbar 
+        wait 200
+    endif
+endif
+
+# Use Mana Drain
+if useManaDrain = 1
+    target clear
+    clearsysmsg
+    if targetexists
+        sysmsg 'Use Target First' 33
+        while targetexists
+            wait 200
+        endwhile
+        wait 300
+        while not targetexists 
+            if inBoss = 1
+                if timer msgSpell > 3000
+                    sysmsg '[S]: Mana Vampire!' 9
+                    settimer msgSpell 0
+                endif
+                cast 'Mana Vampire'
+                wait 200
+                if insysmsg 'do not have that spell'
+                    if timer msgSpell > 3000
+                        sysmsg '[S]: Mana Drain!' 98
+                        settimer msgSpell 0
+                    endif
+                    cast 'Mana Drain'
+                    wait 50
+                endif
+            else
+                if timer msgSpell > 3000
+                    sysmsg '[S]: Mana Drain!' 98
+                    settimer msgSpell 0
+                endif
+                cast 'Mana Drain'
+                wait 50
+            endif
+        endwhile
+    elseif not targetexists 
+        target clear
+        clearsysmsg 
+        while not targetexists 
+            if inBoss = 1
+                sysmsg '[Boss]: True' 77
+                if timer msgSpell > 3000
+                    sysmsg '[S]: Mana Vampire!' 9
+                    settimer msgSpell 0
+                endif
+                cast 'Mana Vampire'
+                wait 50
+                if insysmsg 'do not have that spell'
+                    if timer msgSpell > 3000
+                        sysmsg '[S]: Mana Drain!' 98
+                        settimer msgSpell 0
+                    endif
+                    cast 'Mana Drain'
+                    wait 50
+                endif
+            else
+                if timer msgSpell > 3000
+                    sysmsg '[S]: Mana Drain!' 98
+                    settimer msgSpell 0
+                endif
+                cast 'Mana Drain'
+                wait 50
+            endif
+        endwhile 
+        overhead 'Set Dump Target' 44
+        while targetexists
+            wait 200
+        endwhile 
+    endif
+    wft 200
+    hotkey 'last target'
+    wait 300
+    if targetexists 
+        hotkey 'last target'
+    endif
+    target clear
+endif 
+
+# Using Curse
+if useCurse = 1
+    clearsysmsg
+    while not targetexists 
+        if inBoss = 1
+            if timer msgSpell > 3000
+                sysmsg '[S]: Mass Curse!' 98
+                settimer msgSpell 0
+            endif
+            hotkey 'Mass Curse'
+            wait 200
+            if insysmsg 'do not have that spell'
+                if timer msgSpell > 3000
+                    sysmsg '[S]: Curse!' 98
+                    settimer msgSpell 0
+                endif
+                hotkey 'Curse'
+            endif
+        else
+            if timer msgSpell > 3000
+                sysmsg '[S]: Curse!' 98
+                settimer msgSpell 0
+            endif
+            hotkey 'Curse'
+        endif    
+        wait 50
+    endwhile
+    wft 300
+    hotkey 'last target'
+    wait 300
+    target clear
+    # Sending any Targets to Last
+    if targetexists 
+        hotkey 'last target'
+    endif
+endif
+
+# Follower Attack
+if followers > 0
+    say 'All Attack'
+    wft 200
+    hotkey 'Last Target'    
+endif
+
+# Poison until Lethal
+if skill poisoning > 0
+    getlabel last label
+    if 'Lethal Tics Remaining' in label 
+        overhead '[T]: Lethal Poisoned' 77
+    else
+        clearsysmsg 
+        # MindRot
+        # yell [MindRot
+        gumpresponse 15 622436516 
+        sysmsg 'Lethal Poison' 777
+        while not insysmsg 'lethal'
+            while not targetexists 
+                hotkey 'Poison'
+                wait 50
+                if mana < 9 or hits < 50 or targetexists 
+                    break
+                endif
+            endwhile
+            if mana < 9 or hits < 50
+                break
+            endif
+            wft 200
+            hotkey 'Last Target'
+            getlabel last label
+            if 'Lethal Tics Remaining' in label or insysmsg 'lethal'
+                overhead '[T]: Lethal Poisoned' 77
+                break                
+            endif
+        endwhile 
+    endif
+endif
+
+# Casting Lightning, Fireball, Harm, and Magic Arrow
+sysmsg 'Wizardry Dump' 9
+if targetexists beneficial or targetexists neutral
+    target cancel
+elseif targetexists harmful
+    hotkey 'last target'
+endif
+target clear
+
+# Using Evil Omen
+if useEvilOmen = 1
+    sysmsg 'Evil Omen' 333
+    # Evil Omen
+    # yell [EvilOmen
+    gumpresponse 12 622436516
+endif
+
+# Using Corpse Skin
+if useCorpseSkin = 1
+    wait 650
+    # Corpse Skin
+    # yell [CorpseSkin
+    gumpresponse 13 622436516
+endif
+
+# Using Mind Rot
+if skill poisonining < 1 and useMindRot = 1
+    # Using MindRot if not already used 
+    wait 650
+    # Mind Rot
+    # yell [MindRot
+    gumpresponse 15 622436516
+endif
+
+# Using Strangle
+if useStrangle = 1
+    wait 650
+    # Strangle
+    # yell [Strangle
+    gumpresponse 17 622436516
+endif
+
+# Using Lightning
+if useLightning = 1
+    # Might not need this delay
+    wait 300
+    hotkey 'Lightning'
+    target clear
+    sysmsg '[S]: Lightning' 666
+    while not targetexists
+        hotkey 'Lightning'
+        wait 50
+    endwhile
+    wft 200
+    hotkey 'last target'
+    wait 300
+endif
+
+# Using Fireball
+if useFireball = 1
+    hotkey 'Fireball'
+    target clear
+    sysmsg '[S]: Fireball' 555
+    while not targetexists
+        hotkey 'Lightning'
+        wait 50
+    endwhile
+    wft 200
+    hotkey 'last target'
+    wait 300
+endif
+
+# Using Harm
+if useHarm = 1
+    hotkey 'Harm'
+    target clear
+    sysmsg '[S]: Harm' 444
+    while not targetexists
+        hotkey 'Harm'
+        wait 50
+    endwhile
+    wft 200
+    hotkey 'last target'
+    wait 300
+endif
+
+# Using Magic Arrow
+if useMagicArrow = 1
+    hotkey 'Magic Arrow'
+    target clear
+    sysmsg '[S]: Magic Arrow' 333
+    while not targetexists 
+        hotkey 'Magic Arrow'
+        wait 50
+    endwhile
+    wft 200
+    hotkey 'last target'
+    wait 300
+endif
+clearsysmsg
